@@ -1,0 +1,82 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+   <%- include("../partials/admin_head.ejs")  %>
+    <title>All products</title>
+</head>
+<body>
+    <header>
+        <%- include("../partials/admin_navbar1.ejs")  %>
+    </header>
+    <main>
+        <div class="container"><br><br>
+          
+            <h3 class="center-align">All Products</h3>
+            <%- include("../partials/flash.ejs")  %>
+        <table>
+            <thead>
+              <tr>
+                  <th>id</th>
+                  <th>Product Name</th>
+                  <th>Image</th>
+                  <th>Description</th>
+                  <th>Keywords</th>
+                  <th>Category</th>
+                  <th>Brand</th>
+                  <th>Edit</th>
+                  <th>Delete</th>
+              </tr>
+            </thead>
+    
+            <tbody>
+              <% results.forEach(product=>{ %>
+                <tr>
+                  <td><%= product.id %></td>
+                  <td><%= product.product_name %></td>
+                  <td><img src="../../public/uploads/<%= product.image %>" alt="Product image" style="width: 5rem;" ></td>
+                  
+                  <td><%= product.description %></td>
+                  <td><%= product.keywords %></td>
+                  <td><%= product.category %></td>
+                  <td><%= product.brand %></td>
+                  <td><a href="/admin/edit_product/<%= product.id %>"><i class="material-icons blue-text">edit</i></a></td>
+                  <td>         <!-- Modal Trigger -->
+                    <a class="waves-effect waves-light modal-trigger" href="#modal1"
+                      ><i class="material-icons red-text">delete</i></a
+                    >
+    
+                    <!-- Modal Structure- confirmation of delete -->
+                    <div id="modal1" class="modal">
+                      <div class="modal-content red-text">
+                        <h4>Delete product</h4>
+                        <p>Do You really want to Delete this Product?</p>
+                      </div>
+                      <div class="modal-footer">
+                        <a
+                          href="#!"
+                          class="modal-action modal-close waves-effect waves-green btn-flat"
+                          >Close</a
+                        >
+                        <a
+                        href="/admin/delete_product/<%= product.id %>"
+                          class="modal-action modal-close waves-effect waves-green btn-flat"
+                          >Agree</a
+                        >
+                      </div>
+                    </div></td>
+                </tr>
+               
+
+             <% })  %>
+             
+            
+            </tbody>
+          </table>
+        </div><br><br>
+    </main>
+    <!-- footer here -->
+    <%-  include("../partials/admin_footer.ejs")  %>
+    
+</body>
+<%- include("../partials/admin_foot.ejs")  %>
+</html>
