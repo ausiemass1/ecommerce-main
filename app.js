@@ -1,5 +1,9 @@
+// Load environment variables from .env file
+require('dotenv').config();
+
+
 var express = require("express");
-// import express from "express";
+
 var app = express();
 var bcrypt = require("bcrypt");
 var paypal = require("./services/paypal")
@@ -11,11 +15,11 @@ var flash = require("connect-flash");
 var nodemailer = require("nodemailer");
 var fileUpload = require("express-fileupload");
 var axios = require('axios');
-const dotenv = require("dotenv");
 
-//paypal
 
-dotenv.config(); // Load environment variables
+
+
+
 
 //environment variables
 const PORT = process.env.PORT || 3000;
@@ -23,12 +27,15 @@ const ENVIRONMENT = process.env.ENVIRONMENT;
 const CLIENT_ID = process.env.CLIENT_ID;
 const CLIENT_SECRET = process.env.CLIENT_SECRET;
 
+console.log(process.env.CLIENT_SECRET);  // Check if the value is correct
+console.log(process.env.CLIENT_ID);  // Check if the value is correct
+
 app.set("view engine", "ejs");
 
 // =========================================== uses ========================================================//
 app.use(
   session({
-    secret: 'ELnW_mxuEui9aV5sJ0yvL7DHCoMXyfQEj1U01fLxs68NLBA_fEv1LrOjz4BrhwzlHg_qDMHHlUsbDgPz',
+    secret: CLIENT_SECRET,
     resave: false,
     saveUninitialized: true,
   })
@@ -174,7 +181,7 @@ app.get("/products", (req, res) => {
 });
 
 // ----------------- admin dashboard ----------------- //
-app.get("/admin", (req, res) => {
+app.get("/admin",isAuthenticated, (req, res) => {
   const query =
     "SELECT rating, COUNT(*) AS count FROM product_rating GROUP BY rating";
   const salesquery = "SELECT week, sales_amount FROM weekly_sales";
@@ -190,20 +197,20 @@ app.get("/admin", (req, res) => {
   });
 });
 // ----------------- admin insert Brand ----------------- //
-app.get("/admin/insertbrand", (req, res) =>
+app.get("/admin/insertbrand", isAuthenticated,(req, res) =>
   res.render("adminviews/insertbrand")
 );
 // ----------------- admin insert category ----------------- //
-app.get("/admin/insertcategory", (req, res) =>
+app.get("/admin/insertcategory", isAuthenticated, (req, res) =>
   res.render("adminviews/insertcategory")
 );
 // ----------------- admin insert Product ----------------- //
-app.get("/admin/insertproduct", (req, res) =>
+app.get("/admin/insertproduct", isAuthenticated, (req, res) =>
   res.render("adminviews/insertproduct")
 );
 
 // ----------------- viewing all users ----------------- //
-app.get("/admin/users", (req, res) => {
+app.get("/admin/users", isAuthenticated, (req, res) => {
   conn.query(
     "SELECT * FROM users ORDER BY RAND() LIMIT 10",
     (error, results, fields) => {
@@ -252,7 +259,7 @@ app.post("/auth", (req, res) => {
 });
 
 // -----------------  admin view all products----------------- //
-app.get("/admin/all_products", (req, res) => {
+app.get("/admin/all_products", isAuthenticated, (req, res) => {
   const searchTerm = req.query.search || "";
   const query =
     "SELECT * FROM products WHERE description LIKE ? OR keywords LIKE ?";
@@ -263,7 +270,7 @@ app.get("/admin/all_products", (req, res) => {
   });
 });
 //-----------------  Getting a product to edit  ----------------- //
-app.get("/admin/edit_product/:id", (req, res) => {
+app.get("/admin/edit_product/:id", isAuthenticated, (req, res) => {
   const productId = req.params.id;
   const sql = "SELECT * FROM products WHERE id = ?";
   conn.query(sql, [productId], (err, results) => {
@@ -273,7 +280,7 @@ app.get("/admin/edit_product/:id", (req, res) => {
 });
 
 //----------------- Update Product  ----------------- //
-app.post("/admin/update_product/:id", (req, res) => {
+app.post("/admin/update_product/:id",isAuthenticated, (req, res) => {
   const productId = req.params.id;
   const { product_name, description, keywords, category, brand, price } =
     req.body;
@@ -291,7 +298,7 @@ app.post("/admin/update_product/:id", (req, res) => {
 });
 
 // ----------------- Deleting a product ----------------- /
-app.get("/admin/delete_product/:id", (req, res) => {
+app.get("/admin/delete_product/:id",isAuthenticated, (req, res) => {
   let pid = req.params.id;
   const sql = "DELETE FROM products WHERE id = ?";
   conn.query(sql, [pid], (err, results) => {
@@ -302,14 +309,14 @@ app.get("/admin/delete_product/:id", (req, res) => {
 });
 
 // ----------------- admin view all Categories ----------------- /
-app.get("/admin/all_categories", (req, res) => {
+app.get("/admin/all_categories", isAuthenticated, (req, res) => {
   conn.query("SELECT * FROM categories", (error, results) => {
     if (error) throw error;
     res.render("adminviews/all_categories", { results: results });
   });
 });
 //-----------------  getting category to edit----------------- //
-app.get("/admin/edit_category/:id", (req, res) => {
+app.get("/admin/edit_category/:id",isAuthenticated, (req, res) => {
   const id = req.params.id;
 
   conn.query(
@@ -323,7 +330,7 @@ app.get("/admin/edit_category/:id", (req, res) => {
 });
 
 //-----------------  getting category to edit----------------- //
-app.post("/admin/update_category/:id", (req, res) => {
+app.post("/admin/update_category/:id",isAuthenticated, (req, res) => {
   const categoryId = req.params.id;
   const { category_name, description } = req.body;
   const sql =
@@ -336,7 +343,7 @@ app.post("/admin/update_category/:id", (req, res) => {
 });
 
 //----------------- admin delete a category----------------- //
-app.get("/admin/delete_category/:id", (req, res) => {
+app.get("/admin/delete_category/:id",isAuthenticated, (req, res) => {
   const categoryId = req.params.id;
   const sql = "DELETE FROM categories WHERE id = ? ";
   conn.query(
@@ -351,7 +358,7 @@ app.get("/admin/delete_category/:id", (req, res) => {
 });
 
 //----------------- admin view all Brands----------------- //
-app.get("/admin/all_brands", (req, res) => {
+app.get("/admin/all_brands",isAuthenticated, (req, res) => {
   conn.query("SELECT * FROM brands", (error, results) => {
     if (error) throw error;
     res.render("adminviews/all_brands", { results: results });
@@ -359,7 +366,7 @@ app.get("/admin/all_brands", (req, res) => {
 });
 
 //----------------- admin edit Brand----------------- //
-app.get("/admin/edit_brand/:id", (req, res) => {
+app.get("/admin/edit_brand/:id",isAuthenticated, (req, res) => {
   const brandId = req.params.id;
   const sql = "SELECT * FROM brands WHERE id = ?";
   conn.query(sql, [brandId], (err, results) => {
@@ -369,7 +376,7 @@ app.get("/admin/edit_brand/:id", (req, res) => {
 });
 
 //----------------- admin update Brand----------------- //
-app.post("/admin/update_brand/:id", (req, res) => {
+app.post("/admin/update_brand/:id",isAuthenticated, (req, res) => {
   const brandID = req.params.id;
   const { brand_name, description } = req.body;
   const sql = "UPDATE brands SET brand_name = ?, description = ? WHERE id = ? ";
@@ -398,7 +405,9 @@ app.post("/insertuser", async (req, res) => {
   let surname = req.body.surname;
   let phone = req.body.phone;
   let email = req.body.email;
+  let confirm_password = req.body.confirm_password;
   let hash = await bcrypt.hash(password, 10);
+  if (password === confirm_password){
   conn.query(
     "INSERT INTO users VALUES(?,?,?,?,?,?)",
     [id, name, hash, surname, phone, email],
@@ -409,10 +418,14 @@ app.post("/insertuser", async (req, res) => {
       );
     }
   );
+}else{
+  req.flash('error_msg', 'Passwords do not match');
+  res.redirect('/register');
+}
 });
 
 //-----------------  getting user to edit----------------- //
-app.get("/admin/edituser/:id", (req, res) => {
+app.get("/admin/edituser/:id",isAuthenticated, (req, res) => {
   const id = req.params.id;
 
   conn.query(
@@ -426,7 +439,7 @@ app.get("/admin/edituser/:id", (req, res) => {
 });
 
 // -----------------  updating users table ----------------- //
-app.post("/updateuser/:id", (req, res) => {
+app.post("/updateuser/:id",isAuthenticated, (req, res) => {
   const upid = req.params.id;
   const name = req.body.username;
   const password = req.body.password;
@@ -446,7 +459,7 @@ app.post("/updateuser/:id", (req, res) => {
 });
 
 // ----------------- deleting a user ----------------- //
-app.get("/deleteuser/:id", (req, res) => {
+app.get("/deleteuser/:id",isAuthenticated, (req, res) => {
   const id = req.params.id;
   conn.query(
     "DELETE  FROM users WHERE id = ?",
@@ -460,7 +473,7 @@ app.get("/deleteuser/:id", (req, res) => {
 });
 
 //-----------------  insert products  ----------------- //
-app.post("/admin/insertproduct", (req, res) => {
+app.post("/admin/insertproduct", isAuthenticated, (req, res) => {
   const { product_name, description, keywords, category, brand, price } =
     req.body;
   let image;
@@ -484,7 +497,7 @@ app.post("/admin/insertproduct", (req, res) => {
 });
 
 // ----------------- insert categories -----------------  //
-app.post("/admin/insertcategory", (req, res) => {
+app.post("/admin/insertcategory", isAuthenticated, (req, res) => {
   const { category_name, description } = req.body;
   conn.query(
     "INSERT INTO categories(category_name, description) VALUES(?,?)",
@@ -498,7 +511,7 @@ app.post("/admin/insertcategory", (req, res) => {
 });
 
 // ----------------- Insert brand ----------------- //
-app.post("/admin/insertbrand", (req, res) => {
+app.post("/admin/insertbrand", isAuthenticated, (req, res) => {
   const { brand_name, description } = req.body;
   let sql = "INSERT INTO brands(brand_name,	description) VALUES(?,?)";
   conn.query(sql, [brand_name, description], (error, results, fields) => {
@@ -508,7 +521,7 @@ app.post("/admin/insertbrand", (req, res) => {
   });
 });
 // ----------------- Logout ----------------- //
-app.get("/logout", (req, res) => {
+app.get("/logout", isAuthenticated,(req, res) => {
   req.session.destroy();
   res.redirect("/login");
 });
@@ -607,6 +620,7 @@ app.get("/cart", (req, res) => {
 app.get("/remove-from-cart/:id", (req, res) => {
   const productId = parseInt(req.params.id);
   req.session.cart = req.session.cart.filter((item) => item.id !== productId);
+  req.flash('error_msg', 'product removed from cart successfully!')
   res.redirect("/cart");
 });
 
@@ -636,7 +650,7 @@ app.get('/pay', async (req, res) => {
   );
 
   try {
-      // Step 1: Create PayPal payment
+      // PayPal payment
       const paymentResponse = await axios.post('https://api.sandbox.paypal.com/v1/payments/payment', {
           intent: 'sale',
           redirect_urls: {
@@ -686,7 +700,14 @@ app.get('/success', async (req, res) => {
       });
 
       // Handle successful payment
-      res.send(`Payment successful! Amount: $${captureResponse.data.transactions[0].amount.total}`);
+    req.session.cart = [];
+  // res.flash('success_msg', "Payment successful");
+  // res.redirect('/cart');
+  res.send(
+    `<script>alert("Payment Successful"); window.location.href = "/cart"; </script>`)
+  
+     
+
   } catch (error) {
       console.error('Payment capture error:', error);
       res.status(500).send('Error capturing payment');
@@ -702,8 +723,8 @@ app.get('/cancel', (req, res) => {
 async function getAccessToken() {
   const response = await axios.post('https://api.sandbox.paypal.com/v1/oauth2/token', null, {
       auth: {
-          username: 'AWBJAQpHjgvEHpN4y3k3YVbXSrR2NKgr4phaQDemZuhbzaHg80-7VWt0x-YIbft7z6x9_TBVeQFDqZgV',
-          password: 'ELnW_mxuEui9aV5sJ0yvL7DHCoMXyfQEj1U01fLxs68NLBA_fEv1LrOjz4BrhwzlHg_qDMHHlUsbDgPz'
+          username: CLIENT_ID,
+          password: CLIENT_SECRET
       },
       params: {
           grant_type: 'client_credentials'
@@ -719,6 +740,14 @@ async function getAccessToken() {
 }
 
 // end of paypal processing
+
+// function to restrict access to admin pages
+function isAuthenticated(req, res, next) {
+  if (req.session.loggedin) {
+    return next();
+  }
+  res.redirect('/login');
+}
 app.listen(PORT, () => console.log("app is running at port 3000"));
 // console.log("app is running at port 3000");
 module.exports = app;
