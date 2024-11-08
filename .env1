@@ -1,4 +1,0 @@
-const PORT = process.env.PORT || 3000;
-const ENVIRONMENT = 'development';
-const CLIENT_ID = 'AWBJAQpHjgvEHpN4y3k3YVbXSrR2NKgr4phaQDemZuhbzaHg80-7VWt0x-YIbft7z6x9_TBVeQFDqZgV';
-const CLIENT_SECRET = 'ELnW_mxuEui9aV5sJ0yvL7DHCoMXyfQEj1U01fLxs68NLBA_fEv1LrOjz4BrhwzlHg_qDMHHlUsbDgPz';

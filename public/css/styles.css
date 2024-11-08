@@ -270,3 +270,8 @@ nav ul a {
   padding: 0 15px;
   cursor: pointer;
 }
+
+.row {
+
+  margin-bottom: 0;
+}

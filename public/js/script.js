@@ -31,6 +31,7 @@ document.addEventListener('DOMContentLoaded', function() {
 });
 
 document.addEventListener('DOMContentLoaded', function() {
+  // Initialize tooltips for any elements with class 'tooltipped'
   var elems = document.querySelectorAll('.tooltipped');
-  var instances = M.Tooltip.init(elems, options);
+  var instances = M.Tooltip.init(elems);
 });

@@ -35,9 +35,29 @@
         <li><a class="dropdown-trigger" href="/view_products" data-target="dropdown1">Products<i class="material-icons right">arrow_drop_down</i></a></li>
         <li><a  href="/contact">Contact</a></li>
         <li><a href="/register">Register</a></li>
-        <li><a href="/login">Login</a></li>
+
+
+       
+        
         <li><a href="/cart"><i class="material-icons">shopping_cart</i><sup class="sup">(<%= cartCount  %>)</sup></a></li>
         <li><a href="#" class="">$<%= totalPrice.toFixed(2) %></a></li>
+        <% if( username) {%>
+          <li><a href="/logout">Logout</a></li>
+         
+            <li> <div class="chip tooltipped" data-tooltip="Welcome  <%= username %>" >
+              <img src="../../public/uploads/banana.webp" alt="Contact Person">
+              Welcome  <%= username %>
+            </div></li>
+  
+       <% }else{%>
+        <li><a href="/login">login</a></li>
+    
+          <li> <div class="chip tooltipped" data-tooltip="Welcome Guest" >
+            <img src="../../public/uploads/account_circle.svg" alt="Contact Person">
+            Welcome Guest
+          </div></li>
+        <%}%>
+       
       </ul>
     </div>
   </nav>

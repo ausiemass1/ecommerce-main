@@ -1,12 +1,11 @@
 // Load environment variables from .env file
-require('dotenv').config();
-
+require("dotenv").config();
 
 var express = require("express");
 
 var app = express();
 var bcrypt = require("bcrypt");
-var paypal = require("./services/paypal")
+var paypal = require("./services/paypal");
 var session = require("express-session");
 var file = require("express-fileupload");
 var conn = require("./dbconfig");
@@ -14,21 +13,13 @@ var db = require("./dbconfig2");
 var flash = require("connect-flash");
 var nodemailer = require("nodemailer");
 var fileUpload = require("express-fileupload");
-var axios = require('axios');
-
-
-
-
-
+var axios = require("axios");
 
 //environment variables
 const PORT = process.env.PORT || 3000;
 const ENVIRONMENT = process.env.ENVIRONMENT;
 const CLIENT_ID = process.env.CLIENT_ID;
 const CLIENT_SECRET = process.env.CLIENT_SECRET;
-
-console.log(process.env.CLIENT_SECRET);  // Check if the value is correct
-console.log(process.env.CLIENT_ID);  // Check if the value is correct
 
 app.set("view engine", "ejs");
 
@@ -108,6 +99,19 @@ app.get("/", (req, res) => {
     });
   });
 });
+
+app.get("/user_dashboard", (req, res) => {
+  const cart = req.session.cart || [];
+  const cartCount = req.session.cart ? req.session.cart.length : 0;
+  const totalPrice = req.session.cart
+    ? cart.reduce((total, item) => total + item.price * item.quantity, 0)
+    : 0.0;
+  res.render("user_dashboard", {
+    cart: req.session.cart || [],
+    cartCount,
+    totalPrice,
+  });
+});
 app.get("/login", (req, res) => {
   //cart functionality
   const cart = req.session.cart || [];
@@ -125,11 +129,10 @@ app.get("/checkout", (req, res) => {
   const totalPrice = req.session.cart
     ? cart.reduce((total, item) => total + item.price * item.quantity, 0)
     : 0.0;
-  res.render("checkout", {cart, cartCount, totalPrice });
+  res.render("checkout", { cart, cartCount, totalPrice });
 });
 
 app.get("/register", (req, res) => {
-
   //cart functionality
   const cart = req.session.cart || [];
   const cartCount = req.session.cart ? req.session.cart.length : 0;
@@ -144,12 +147,12 @@ app.get("/register", (req, res) => {
 });
 app.get("/contact", (req, res) => {
   const searchTerm = req.query.search || "";
-    //cart functionality
-    const cart = req.session.cart || [];
-    const cartCount = req.session.cart ? req.session.cart.length : 0;
-    const totalPrice = req.session.cart
-      ? cart.reduce((total, item) => total + item.price * item.quantity, 0)
-      : 0.0;
+  //cart functionality
+  const cart = req.session.cart || [];
+  const cartCount = req.session.cart ? req.session.cart.length : 0;
+  const totalPrice = req.session.cart
+    ? cart.reduce((total, item) => total + item.price * item.quantity, 0)
+    : 0.0;
   res.render("contact", {
     cart: req.session.cart || [],
     cartCount,
@@ -160,12 +163,12 @@ app.get("/contact", (req, res) => {
 //----------------- View products ----------------- //
 app.get("/view_products", (req, res) => {
   const searchTerm = req.query.search || "";
-    //cart functionality
-    const cart = req.session.cart || [];
-    const cartCount = req.session.cart ? req.session.cart.length : 0;
-    const totalPrice = req.session.cart
-      ? cart.reduce((total, item) => total + item.price * item.quantity, 0)
-      : 0.0;
+  //cart functionality
+  const cart = req.session.cart || [];
+  const cartCount = req.session.cart ? req.session.cart.length : 0;
+  const totalPrice = req.session.cart
+    ? cart.reduce((total, item) => total + item.price * item.quantity, 0)
+    : 0.0;
   const query =
     "SELECT * FROM products WHERE description LIKE ? OR keywords LIKE ?";
 
@@ -181,7 +184,7 @@ app.get("/products", (req, res) => {
 });
 
 // ----------------- admin dashboard ----------------- //
-app.get("/admin",isAuthenticated, (req, res) => {
+app.get("/admin", isAuthenticated, (req, res) => {
   const query =
     "SELECT rating, COUNT(*) AS count FROM product_rating GROUP BY rating";
   const salesquery = "SELECT week, sales_amount FROM weekly_sales";
@@ -197,7 +200,7 @@ app.get("/admin",isAuthenticated, (req, res) => {
   });
 });
 // ----------------- admin insert Brand ----------------- //
-app.get("/admin/insertbrand", isAuthenticated,(req, res) =>
+app.get("/admin/insertbrand", isAuthenticated, (req, res) =>
   res.render("adminviews/insertbrand")
 );
 // ----------------- admin insert category ----------------- //
@@ -243,9 +246,13 @@ app.post("/auth", (req, res) => {
         // Set user session and redirect to the dashboard
         req.session.loggedin = true;
         req.session.username = user.name;
-
-        req.flash("success_msg", " Successfuly logged in!");
-        res.redirect("/admin");
+        if (results[0].user_type == 1) {
+          req.flash("success_msg", " Successfuly logged in!");
+          res.redirect("/admin");
+        } else {
+          req.flash("success_msg", " Successfuly logged in!");
+          res.redirect("/user_dashboard");
+        }
       } else {
         // res.send('Invalid credentials!');
         req.flash("error_msg", "Invalid credentials! Try again");
@@ -280,7 +287,7 @@ app.get("/admin/edit_product/:id", isAuthenticated, (req, res) => {
 });
 
 //----------------- Update Product  ----------------- //
-app.post("/admin/update_product/:id",isAuthenticated, (req, res) => {
+app.post("/admin/update_product/:id", isAuthenticated, (req, res) => {
   const productId = req.params.id;
   const { product_name, description, keywords, category, brand, price } =
     req.body;
@@ -298,7 +305,7 @@ app.post("/admin/update_product/:id",isAuthenticated, (req, res) => {
 });
 
 // ----------------- Deleting a product ----------------- /
-app.get("/admin/delete_product/:id",isAuthenticated, (req, res) => {
+app.get("/admin/delete_product/:id", isAuthenticated, (req, res) => {
   let pid = req.params.id;
   const sql = "DELETE FROM products WHERE id = ?";
   conn.query(sql, [pid], (err, results) => {
@@ -316,7 +323,7 @@ app.get("/admin/all_categories", isAuthenticated, (req, res) => {
   });
 });
 //-----------------  getting category to edit----------------- //
-app.get("/admin/edit_category/:id",isAuthenticated, (req, res) => {
+app.get("/admin/edit_category/:id", isAuthenticated, (req, res) => {
   const id = req.params.id;
 
   conn.query(
@@ -330,7 +337,7 @@ app.get("/admin/edit_category/:id",isAuthenticated, (req, res) => {
 });
 
 //-----------------  getting category to edit----------------- //
-app.post("/admin/update_category/:id",isAuthenticated, (req, res) => {
+app.post("/admin/update_category/:id", isAuthenticated, (req, res) => {
   const categoryId = req.params.id;
   const { category_name, description } = req.body;
   const sql =
@@ -343,7 +350,7 @@ app.post("/admin/update_category/:id",isAuthenticated, (req, res) => {
 });
 
 //----------------- admin delete a category----------------- //
-app.get("/admin/delete_category/:id",isAuthenticated, (req, res) => {
+app.get("/admin/delete_category/:id", isAuthenticated, (req, res) => {
   const categoryId = req.params.id;
   const sql = "DELETE FROM categories WHERE id = ? ";
   conn.query(
@@ -358,7 +365,7 @@ app.get("/admin/delete_category/:id",isAuthenticated, (req, res) => {
 });
 
 //----------------- admin view all Brands----------------- //
-app.get("/admin/all_brands",isAuthenticated, (req, res) => {
+app.get("/admin/all_brands", isAuthenticated, (req, res) => {
   conn.query("SELECT * FROM brands", (error, results) => {
     if (error) throw error;
     res.render("adminviews/all_brands", { results: results });
@@ -366,7 +373,7 @@ app.get("/admin/all_brands",isAuthenticated, (req, res) => {
 });
 
 //----------------- admin edit Brand----------------- //
-app.get("/admin/edit_brand/:id",isAuthenticated, (req, res) => {
+app.get("/admin/edit_brand/:id", isAuthenticated, (req, res) => {
   const brandId = req.params.id;
   const sql = "SELECT * FROM brands WHERE id = ?";
   conn.query(sql, [brandId], (err, results) => {
@@ -376,7 +383,7 @@ app.get("/admin/edit_brand/:id",isAuthenticated, (req, res) => {
 });
 
 //----------------- admin update Brand----------------- //
-app.post("/admin/update_brand/:id",isAuthenticated, (req, res) => {
+app.post("/admin/update_brand/:id", isAuthenticated, (req, res) => {
   const brandID = req.params.id;
   const { brand_name, description } = req.body;
   const sql = "UPDATE brands SET brand_name = ?, description = ? WHERE id = ? ";
@@ -405,27 +412,28 @@ app.post("/insertuser", async (req, res) => {
   let surname = req.body.surname;
   let phone = req.body.phone;
   let email = req.body.email;
+  let user_type = req.body.user_type;
   let confirm_password = req.body.confirm_password;
   let hash = await bcrypt.hash(password, 10);
-  if (password === confirm_password){
-  conn.query(
-    "INSERT INTO users VALUES(?,?,?,?,?,?)",
-    [id, name, hash, surname, phone, email],
-    (error, results, fields) => {
-      if (error) throw error;
-      res.send(
-        `<script>alert("Data inserted successfully"); window.location.href = "/login"; </script>`
-      );
-    }
-  );
-}else{
-  req.flash('error_msg', 'Passwords do not match');
-  res.redirect('/register');
-}
+  if (password === confirm_password) {
+    conn.query(
+      "INSERT INTO users(name,password,surname,phone,email) VALUES(?,?,?,?,?)",
+      [name, hash, surname, phone, email],
+      (error, results, fields) => {
+        if (error) throw error;
+        res.send(
+          `<script>alert("Data inserted successfully"); window.location.href = "/login"; </script>`
+        );
+      }
+    );
+  } else {
+    req.flash("error_msg", "Passwords do not match");
+    res.redirect("/register");
+  }
 });
 
 //-----------------  getting user to edit----------------- //
-app.get("/admin/edituser/:id",isAuthenticated, (req, res) => {
+app.get("/admin/edituser/:id", isAuthenticated, (req, res) => {
   const id = req.params.id;
 
   conn.query(
@@ -439,7 +447,7 @@ app.get("/admin/edituser/:id",isAuthenticated, (req, res) => {
 });
 
 // -----------------  updating users table ----------------- //
-app.post("/updateuser/:id",isAuthenticated, (req, res) => {
+app.post("/updateuser/:id", isAuthenticated, (req, res) => {
   const upid = req.params.id;
   const name = req.body.username;
   const password = req.body.password;
@@ -459,7 +467,7 @@ app.post("/updateuser/:id",isAuthenticated, (req, res) => {
 });
 
 // ----------------- deleting a user ----------------- //
-app.get("/deleteuser/:id",isAuthenticated, (req, res) => {
+app.get("/deleteuser/:id", isAuthenticated, (req, res) => {
   const id = req.params.id;
   conn.query(
     "DELETE  FROM users WHERE id = ?",
@@ -521,7 +529,7 @@ app.post("/admin/insertbrand", isAuthenticated, (req, res) => {
   });
 });
 // ----------------- Logout ----------------- //
-app.get("/logout", isAuthenticated,(req, res) => {
+app.get("/logout", (req, res) => {
   req.session.destroy();
   res.redirect("/login");
 });
@@ -541,7 +549,7 @@ app.post("/contact", async (req, res) => {
 
     let mailOptions = {
       from: email,
-      to: "ausiemass@yahoo.com",
+      to: "ausiemass@gmail.com",
       subject: `New message from ${name}`,
       text: message,
     };
@@ -620,7 +628,7 @@ app.get("/cart", (req, res) => {
 app.get("/remove-from-cart/:id", (req, res) => {
   const productId = parseInt(req.params.id);
   req.session.cart = req.session.cart.filter((item) => item.id !== productId);
-  req.flash('error_msg', 'product removed from cart successfully!')
+  req.flash("error_msg", "product removed from cart successfully!");
   res.redirect("/cart");
 });
 
@@ -637,9 +645,8 @@ app.get("/payment", (req, res) => {
 
 //============================paypal processing===================================================//
 
-
 // PayPal payment route
-app.get('/pay', async (req, res) => {
+app.get("/pay", async (req, res) => {
   // const total = req.body.total;
 
   const cart = req.session.cart || [];
@@ -650,91 +657,106 @@ app.get('/pay', async (req, res) => {
   );
 
   try {
-      // PayPal payment
-      const paymentResponse = await axios.post('https://api.sandbox.paypal.com/v1/payments/payment', {
-          intent: 'sale',
-          redirect_urls: {
-              return_url: `http://localhost:3000/success`,
-              cancel_url: `http://localhost:3000/cancel`
+    // PayPal payment
+    const paymentResponse = await axios.post(
+      "https://api.sandbox.paypal.com/v1/payments/payment",
+      {
+        intent: "sale",
+        redirect_urls: {
+          return_url: `http://localhost:3000/success`,
+          cancel_url: `http://localhost:3000/cancel`,
+        },
+        payer: {
+          payment_method: "paypal",
+        },
+        transactions: [
+          {
+            amount: {
+              total: totalPrice,
+              currency: "USD",
+            },
+            description: "Shopping Cart Total",
           },
-          payer: {
-              payment_method: 'paypal'
-          },
-          transactions: [{
-              amount: {
-                  total: totalPrice,
-                  currency: 'USD'
-              },
-              description: 'Shopping Cart Total'
-          }]
-      }, {
-          headers: {
-              'Content-Type': 'application/json',
-              'Authorization': `Bearer ${await getAccessToken()}` // Get access token
-          }
-      });
+        ],
+      },
+      {
+        headers: {
+          "Content-Type": "application/json",
+          Authorization: `Bearer ${await getAccessToken()}`, // Get access token
+        },
+      }
+    );
 
-      // Redirect to PayPal approval URL
-      const approvalUrl = paymentResponse.data.links.find(link => link.rel === 'approval_url').href;
-      res.redirect(approvalUrl);
+    // Redirect to PayPal approval URL
+    const approvalUrl = paymentResponse.data.links.find(
+      (link) => link.rel === "approval_url"
+    ).href;
+    res.redirect(approvalUrl);
   } catch (error) {
-      console.error('PayPal payment error:', error);
-      res.status(500).send('Error processing payment');
+    console.error("PayPal payment error:", error);
+    res.status(500).send("Error processing payment");
   }
 });
 
 // Capture payment route
-app.get('/success', async (req, res) => {
+app.get("/success", async (req, res) => {
   const paymentId = req.query.paymentId;
   const payerId = req.query.PayerID;
 
   try {
-      // Step 2: Capture the payment
-      const captureResponse = await axios.post(`https://api.sandbox.paypal.com/v1/payments/payment/${paymentId}/execute`, {
-          payer_id: payerId
-      }, {
-          headers: {
-              'Content-Type': 'application/json',
-              'Authorization': `Bearer ${await getAccessToken()}` // Get access token
-          }
-      });
+    // Step 2: Capture the payment
+    const captureResponse = await axios.post(
+      `https://api.sandbox.paypal.com/v1/payments/payment/${paymentId}/execute`,
+      {
+        payer_id: payerId,
+      },
+      {
+        headers: {
+          "Content-Type": "application/json",
+          Authorization: `Bearer ${await getAccessToken()}`, // Get access token
+        },
+      }
+    );
 
-      // Handle successful payment
+    // Handle successful payment
     req.session.cart = [];
-  // res.flash('success_msg', "Payment successful");
-  // res.redirect('/cart');
-  res.send(
-    `<script>alert("Payment Successful"); window.location.href = "/cart"; </script>`)
-  
-     
-
+    // res.flash('success_msg', "Payment successful");
+    // res.redirect('/cart');
+    res.send(
+      `<script>alert("Payment Successful"); window.location.href = "/cart"; </script>`
+    );
   } catch (error) {
-      console.error('Payment capture error:', error);
-      res.status(500).send('Error capturing payment');
+    console.error("Payment capture error:", error);
+    res.status(500).send("Error capturing payment");
   }
 });
 
 // Cancel route
-app.get('/cancel', (req, res) => {
-  res.send('Payment was canceled.');
+app.get("/cancel", (req, res) => {
+  res.send("Payment was canceled.");
 });
 
 // Function to get PayPal access token
 async function getAccessToken() {
-  const response = await axios.post('https://api.sandbox.paypal.com/v1/oauth2/token', null, {
+  const response = await axios.post(
+    "https://api.sandbox.paypal.com/v1/oauth2/token",
+    null,
+    {
       auth: {
-          username: CLIENT_ID,
-          password: CLIENT_SECRET
+        username:
+          "AWBJAQpHjgvEHpN4y3k3YVbXSrR2NKgr4phaQDemZuhbzaHg80-7VWt0x-YIbft7z6x9_TBVeQFDqZgV",
+        password:
+          "ELnW_mxuEui9aV5sJ0yvL7DHCoMXyfQEj1U01fLxs68NLBA_fEv1LrOjz4BrhwzlHg_qDMHHlUsbDgPz",
       },
       params: {
-          grant_type: 'client_credentials'
+        grant_type: "client_credentials",
       },
       headers: {
-          'Accept': 'application/json',
-          'Accept-Language': 'en_US'
-      }
-  });
-
+        Accept: "application/json",
+        "Accept-Language": "en_US",
+      },
+    }
+  );
 
   return response.data.access_token;
 }
@@ -746,7 +768,7 @@ function isAuthenticated(req, res, next) {
   if (req.session.loggedin) {
     return next();
   }
-  res.redirect('/login');
+  res.redirect("/login");
 }
 app.listen(PORT, () => console.log("app is running at port 3000"));
 // console.log("app is running at port 3000");
